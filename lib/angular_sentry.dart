@@ -9,7 +9,7 @@ import "package:sentry/sentry.dart";
 import 'package:stack_trace/stack_trace.dart';
 import "package:http/browser_client.dart";
 
-const OpaqueToken SENTRY_DSN = const OpaqueToken('sentryDSN');
+const OpaqueToken sentryDsn = const OpaqueToken('sentryDSN');
 
 @Injectable()
 class AngularSentry implements ExceptionHandler {
@@ -20,11 +20,11 @@ class AngularSentry implements ExceptionHandler {
 
   AngularSentry(
       Injector injector,
-      @Optional() @Inject(SENTRY_DSN) String sentryDSN,
+      @Optional() @Inject(sentryDsn) String dsn,
       @Optional() BrowserClient client) {
-    if (sentryDSN != null) {
+    if (dsn != null) {
       _sentry = new SentryClient(
-          dsn: sentryDSN,
+          dsn: dsn,
           compressPayload: false,
           httpClient: client ?? new BrowserClient());
     }
