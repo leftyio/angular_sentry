@@ -18,9 +18,7 @@ class AngularSentry implements ExceptionHandler {
   Logger get log => _log;
   ApplicationRef _appRef;
 
-  AngularSentry(
-      Injector injector,
-      @Optional() @Inject(sentryDsn) String dsn,
+  AngularSentry(Injector injector, @Optional() @Inject(sentryDsn) String dsn,
       @Optional() BrowserClient client) {
     if (dsn != null) {
       _sentry = new SentryClient(
@@ -36,9 +34,9 @@ class AngularSentry implements ExceptionHandler {
     });
   }
 
-  void onCatch(dynamic exception, Trace trace, [String reason]) {
+  void onCatch(dynamic exception, [dynamic stackTrace, String reason]) {
     try {
-      _send(exception, trace, reason);
+      _send(exception, stackTrace, reason);
     } catch (e, s) {
       logError(e, s);
       // do nothing;
@@ -47,19 +45,18 @@ class AngularSentry implements ExceptionHandler {
 
   /// Log the catched error using Logging
   /// Called before onCatch
-  void logError(dynamic exception, Trace trace, [String reason]) {
-    _log.severe(ExceptionHandler.exceptionToString(
-      exception,
-      trace,
-      reason,
-    ));
+  void logError(dynamic exception, [dynamic stackTrace, String reason]) {
+    _log.severe(() => ExceptionHandler.exceptionToString(
+          exception,
+          stackTrace,
+          reason,
+        ));
   }
 
   @override
   void call(dynamic exception, [dynamic stackTrace, String reason]) {
-    final trace = parseStackTrace(stackTrace);
-    logError(exception, trace, reason);
-    onCatch(exception, trace, reason);
+    logError(exception, stackTrace, reason);
+    onCatch(exception, stackTrace, reason);
     _appRef?.tick();
   }
 
@@ -67,9 +64,9 @@ class AngularSentry implements ExceptionHandler {
   String get environment => null;
 
   Map<String, String> get tags => {
-    "userAgent": html.window.navigator.userAgent,
-    "platform": html.window.navigator.platform
-  };
+        "userAgent": html.window.navigator.userAgent,
+        "platform": html.window.navigator.platform
+      };
 
   /// The release version of the application.
   String get release => null;
@@ -77,16 +74,16 @@ class AngularSentry implements ExceptionHandler {
   /// provide extra data to the sentry report
   Map<String, String> get extra => null;
 
-  void _send(dynamic exception, dynamic stackTrace, String reason) {
-    _sentry?.capture(
-        event: new Event(
-            exception: exception,
-            stackTrace: stackTrace,
-            release: release,
-            environment: environment,
-            extra: extra,
-            tags: tags,
-            message: reason));
+  void _send(dynamic exception, [dynamic stackTrace, String reason]) {
+    final event = new Event(
+        exception: exception,
+        stackTrace: parseStackTrace(stackTrace),
+        release: release,
+        environment: environment,
+        extra: extra,
+        tags: tags,
+        message: reason);
+    _sentry?.capture(event: event);
   }
 }
 
@@ -95,25 +92,40 @@ Trace parseStackTrace(dynamic stackTrace) {
     return new Trace.parse(stackTrace.toString());
   } else if (stackTrace is String) {
     return new Trace.parse(stackTrace);
-  } else if (stackTrace is Iterable<Frame>) {
-    return new Trace(stackTrace);
-  } else if (stackTrace is Iterable<String>) {
-    return new Trace(stackTrace.map(parseFrame).where((f) => f != null));
+  } else if (stackTrace is Iterable<String> && stackTrace.length == 1) {
+    return new Trace.parse(stackTrace.first);
+  } else if (stackTrace is Iterable) {
+    final trace = stackTrace.map(parseFrame).where((f) => f != null).toList();
+    return new Trace(trace);
   }
   return new Trace.current();
 }
 
-Frame parseFrame(String f) {
-  Frame parsed = new Frame.parseV8(f);
-  if (parsed is UnparsedFrame) {
-    parsed = new Frame.parseFirefox(f);
+Frame parseFrame(f) {
+  if (f is Frame) {
+    return f;
+  }
+  Frame parsed;
+  if (f is String) {
+    parsed = new Frame.parseV8(f);
     if (parsed is UnparsedFrame) {
-      try {
-        return new Frame.parseFriendly(f);
-      } catch (_) {
-        parsed = null;
+      parsed = new Frame.parseFirefox(f);
+      if (parsed is UnparsedFrame) {
+        parsed = new Frame.parseSafari(f);
+        if (parsed is UnparsedFrame) {
+          try {
+            parsed = new Frame.parseFriendly(f);
+          } catch (_) {
+            parsed = null;
+          }
+        }
       }
     }
   }
-  return null;
+
+  if (parsed is UnparsedFrame) {
+    parsed = null;
+  }
+
+  return parsed;
 }
