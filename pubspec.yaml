@@ -1,6 +1,6 @@
 name: angular_sentry
 description: Helper to implements sentry with Angular
-version: 0.0.3
+version: 0.0.4
 homepage: https://lefty.io
 author: Hadrien Lejard <hadrien.lejard@gmail.com>
 
@@ -8,11 +8,13 @@ environment:
   sdk: '>=1.20.1 <2.0.0'
 
 dependencies:
-  angular: ^4.0.0
-  sentry: ^0.0.6
-  stack_trace: ^1.9.0
+  angular: ^5.0.0-alpha+9
+  sentry: ^2.0.0
   logging: ^0.11.0
   http: ^0.11.3
 
-#dev_dependencies:
-#  test: ^0.12.0
+dev_dependencies:
+  build: '>=0.11.1 <0.13.0'
+  build_runner: ^0.8.1
+  build_test: ^0.10.1+1
+  build_web_compilers: ^0.3.5

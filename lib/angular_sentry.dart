@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:angular/angular.dart';
 import 'package:logging/logging.dart';
 import "package:sentry/sentry.dart";
-import 'package:stack_trace/stack_trace.dart';
 import "package:http/browser_client.dart";
 
 const OpaqueToken sentryDsn = const OpaqueToken('sentryDSN');
@@ -29,7 +28,7 @@ class AngularSentry implements ExceptionHandler {
 
     _log = new Logger("$runtimeType");
     // prevent DI circular dependency
-    new Future<Null>.delayed(Duration.ZERO, () {
+    new Future<Null>.delayed(Duration.zero, () {
       _appRef = injector.get(ApplicationRef) as ApplicationRef;
     });
   }
@@ -77,7 +76,7 @@ class AngularSentry implements ExceptionHandler {
   void _send(dynamic exception, [dynamic stackTrace, String reason]) {
     final event = new Event(
         exception: exception,
-        stackTrace: parseStackTrace(stackTrace),
+        stackTrace: stackTrace,
         release: release,
         environment: environment,
         extra: extra,
@@ -85,47 +84,4 @@ class AngularSentry implements ExceptionHandler {
         message: reason);
     _sentry?.capture(event: event);
   }
-}
-
-Trace parseStackTrace(dynamic stackTrace) {
-  if (stackTrace is StackTrace) {
-    return new Trace.parse(stackTrace.toString());
-  } else if (stackTrace is String) {
-    return new Trace.parse(stackTrace);
-  } else if (stackTrace is Iterable<String> && stackTrace.length == 1) {
-    return new Trace.parse(stackTrace.first);
-  } else if (stackTrace is Iterable) {
-    final trace = stackTrace.map(parseFrame).where((f) => f != null).toList();
-    return new Trace(trace);
-  }
-  return new Trace.current();
-}
-
-Frame parseFrame(f) {
-  if (f is Frame) {
-    return f;
-  }
-  Frame parsed;
-  if (f is String) {
-    parsed = new Frame.parseV8(f);
-    if (parsed is UnparsedFrame) {
-      parsed = new Frame.parseFirefox(f);
-      if (parsed is UnparsedFrame) {
-        parsed = new Frame.parseSafari(f);
-        if (parsed is UnparsedFrame) {
-          try {
-            parsed = new Frame.parseFriendly(f);
-          } catch (_) {
-            parsed = null;
-          }
-        }
-      }
-    }
-  }
-
-  if (parsed is UnparsedFrame) {
-    parsed = null;
-  }
-
-  return parsed;
 }
