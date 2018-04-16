@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.4
+
+- update sentry package to 1.0.0
+
 ## 0.0.3
 
 - fix logger
