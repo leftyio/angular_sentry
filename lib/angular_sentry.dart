@@ -5,25 +5,23 @@ import 'dart:async';
 
 import 'package:angular/angular.dart';
 import 'package:logging/logging.dart';
-import "package:sentry/sentry.dart";
+import "package:sentry/sentry_browser.dart";
 import "package:http/browser_client.dart";
 
 const OpaqueToken sentryDsn = const OpaqueToken('sentryDSN');
 
-@Injectable()
 class AngularSentry implements ExceptionHandler {
-  SentryClient _sentry;
+  SentryBrowserClient _sentry;
   Logger _log;
+
   Logger get log => _log;
   ApplicationRef _appRef;
 
   AngularSentry(Injector injector, @Optional() @Inject(sentryDsn) String dsn,
       @Optional() BrowserClient client) {
     if (dsn != null) {
-      _sentry = new SentryClient(
-          dsn: dsn,
-          compressPayload: false,
-          httpClient: client ?? new BrowserClient());
+      _sentry = new SentryBrowserClient(
+          dsn: dsn, httpClient: client ?? new BrowserClient());
     }
 
     _log = new Logger("$runtimeType");
@@ -62,26 +60,24 @@ class AngularSentry implements ExceptionHandler {
   /// provide environment data to the sentry report
   String get environment => null;
 
-  Map<String, String> get tags => {
-        "userAgent": html.window.navigator.userAgent,
-        "platform": html.window.navigator.platform
-      };
+  Map<String, String> get tags => {};
 
   /// The release version of the application.
   String get release => null;
 
   /// provide extra data to the sentry report
-  Map<String, String> get extra => null;
+  Map<String, String> get extra => {};
 
   void _send(dynamic exception, [dynamic stackTrace, String reason]) {
-    final event = new Event(
-        exception: exception,
-        stackTrace: stackTrace,
-        release: release,
-        environment: environment,
-        extra: extra,
-        tags: tags,
-        message: reason);
-    _sentry?.capture(event: event);
+    _sentry?.capture(
+        event: new Event(
+            exception: exception,
+            stackTrace: stackTrace,
+            release: release,
+            environment: environment,
+            extra: extra,
+            tags: tags,
+            message: reason,
+            platform: jsPlatform));
   }
 }

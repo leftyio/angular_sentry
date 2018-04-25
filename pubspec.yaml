@@ -9,7 +9,8 @@ environment:
 
 dependencies:
   angular: ^5.0.0-alpha+9
-  sentry: ^2.0.0
+  sentry:
+    git: https://github.com/lejard-h/sentry.git
   logging: ^0.11.0
   http: ^0.11.3
 

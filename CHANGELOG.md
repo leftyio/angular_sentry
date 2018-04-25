@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.4
+
+- Update angular 5
+- use SentryBrowserClient
+
 ## 0.0.3
 
 - fix logger
