@@ -78,6 +78,7 @@ class AngularSentry implements ExceptionHandler {
             extra: extra,
             tags: tags,
             message: reason,
-            platform: jsPlatform));
+            platform: jsPlatform,
+            origin: _sentry.origin));
   }
 }
