@@ -2,6 +2,7 @@
 
 ## 0.1.0
 
+- Update angular 5
 - Update sentry package
 - ***Warning*** refactoring ***Breaking Change***:
     + use OpaqueToken to pass release version, environment, dsn and logger
@@ -11,8 +12,7 @@
 
 ## 0.0.4
 
-- Update angular 5
-- use SentryBrowserClient
+- update sentry package to 1.0.0
 
 ## 0.0.3
 

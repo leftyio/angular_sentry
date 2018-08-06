@@ -46,6 +46,7 @@ class AngularSentry implements ExceptionHandler {
 
   Stream<Event> _onException;
   SentryClientBrowser _sentry;
+
   ApplicationRef _appRef;
 
   AngularSentry(
