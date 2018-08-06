@@ -7,13 +7,16 @@ import 'package:http/http.dart';
 // ignore: uri_has_not_been_generated
 import 'main.template.dart' as ng;
 
+// ignore: uri_has_not_been_generated
+import 'app.template.dart' as app;
+
 const sentryModule = Module(provide: [
   //ValueProvider.forToken(sentryLoggerToken, "MY_SENTRY_DSN"),
   ValueProvider.forToken(sentryEnvironmentToken, "production"),
   ValueProvider.forToken(sentryReleaseVersionToken, "1.0.0"),
   ClassProvider<ExceptionHandler>(
     ExceptionHandler,
-    useClass: AppSentry,
+    useClass: AngularSentry,
   ),
 ]);
 
@@ -23,17 +26,7 @@ const sentryModule = Module(provide: [
 const scannerApp = ng.scannerApp$Injector;
 
 main() {
-  runApp(ng.AppComponentNgFactory, createInjector: scannerApp);
-}
-
-@Component(
-  selector: 'app',
-  template: '<button (click)="error()">Catch error</button>',
-)
-class AppComponent {
-  void error() {
-    throw Exception("Test error");
-  }
+  runApp(app.AppComponentNgFactory, createInjector: scannerApp);
 }
 
 class AppSentry extends AngularSentry {

@@ -124,11 +124,11 @@ class AngularSentry implements ExceptionHandler {
 
   /// log error using window.console.error
   void logErrorWindow(exception, [stackTrace, String reason]) {
-    if (reason != null) html.window.console.error(reason);
+    if (reason != null) html.window.console.error(reason.toString());
 
-    html.window.console.error(exception);
+    html.window.console.error(exception.toString());
 
-    if (stackTrace != null) html.window.console.error(stackTrace);
+    if (stackTrace != null) html.window.console.error(stackTrace.toString());
   }
 
   @protected
