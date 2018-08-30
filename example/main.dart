@@ -30,10 +30,9 @@ main() {
 }
 
 class AppSentry extends AngularSentry {
-  AppSentry(Injector injector, NgZone zone)
+  AppSentry(Injector injector)
       : super(
           injector,
-          zone,
           //dsn: "MY_SENTRY_DSN",
           environment: "production",
           release: "1.0.0",

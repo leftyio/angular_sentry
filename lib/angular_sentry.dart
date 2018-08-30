@@ -41,8 +41,8 @@ class AngularSentry implements ExceptionHandler {
   final String dsn;
   final Client client;
   final TransformEvent eventTransformer;
-  final _exceptionController = new StreamController<Event>.broadcast();
-  final NgZone zone;
+
+  final _exceptionController = StreamController<Event>.broadcast();
 
   Stream<Event> _onException;
   SentryClientBrowser _sentry;
@@ -50,8 +50,7 @@ class AngularSentry implements ExceptionHandler {
   ApplicationRef _appRef;
 
   AngularSentry(
-    Injector injector,
-    this.zone, {
+    Injector injector, {
     @Optional() this.client,
     @Optional() @Inject(sentryDsnToken) this.dsn,
     @Optional() @Inject(sentryLoggerToken) this.log,
@@ -64,21 +63,27 @@ class AngularSentry implements ExceptionHandler {
       _appRef = injector.get(ApplicationRef) as ApplicationRef;
     });
 
-    _onException =
-        _exceptionController.stream.map(transformEvent).where((e) => e != null);
+    _onException = _exceptionController.stream
+        .map(
+          transformEvent,
+        )
+        .where(
+          (event) => event != null,
+        )..listen(
+            _sendEvent,
+            onError: logError,
+          );
 
-    _onException.listen(_sendEvent, onError: logError);
-
-    zone.runOutsideAngular(_initSentry);
+    _initSentry();
   }
 
   void _initSentry() {
     if (dsn == null) return;
 
     try {
-      _sentry = new SentryClientBrowser(
+      _sentry = SentryClientBrowser(
           dsn: dsn,
-          httpClient: client ?? new BrowserClient(),
+          httpClient: client ?? BrowserClient(),
           environmentAttributes: Event(
             environment: environment,
             release: release,
@@ -88,13 +93,13 @@ class AngularSentry implements ExceptionHandler {
     }
   }
 
-  void _sendEvent(Event e) => zone.runOutsideAngular(() {
-        try {
-          _sentry?.capture(event: e);
-        } catch (e, s) {
-          logError(e, s);
-        }
-      });
+  void _sendEvent(Event e) {
+    try {
+      _sentry?.capture(event: e);
+    } catch (e, s) {
+      logError(e, s);
+    }
+  }
 
   /// onException stream after [transformEvent] call
   Stream<Event> get onException => _onException;
@@ -103,15 +108,16 @@ class AngularSentry implements ExceptionHandler {
   /// adding tags or extra for example
   @protected
   @mustCallSuper
-  Event transformEvent(Event e) => zone.runOutsideAngular(() {
-        try {
-          if (eventTransformer == null) return e;
+  Event transformEvent(Event e) {
+    try {
+      if (eventTransformer == null) return e;
 
-          return eventTransformer(e);
-        } catch (e, s) {
-          logError(e, s);
-        }
-      });
+      return eventTransformer(e);
+    } catch (e, s) {
+      logError(e, s);
+      return e;
+    }
+  }
 
   /// Log the catched error using Logging
   /// if no logger provided, print into console with window.console.error
