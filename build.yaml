@@ -1,0 +1,8 @@
+targets:
+  angular_sentry:
+    sources:
+      include: ["example/**", "lib/**"]
+    builders:
+      build_web_compilers|dart_source_cleanup:
+        release_options:
+          enabled: false
