@@ -6,11 +6,10 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:angular/angular.dart';
 import 'package:logging/logging.dart';
-import "package:sentry/sentry_browser.dart";
-import "package:http/http.dart";
-import "package:http/browser_client.dart";
+import 'package:sentry/browser_client.dart';
+import 'package:http/http.dart';
 
-export 'package:sentry/sentry_browser.dart';
+export 'package:sentry/sentry.dart';
 
 typedef Event TransformEvent(Event e);
 
@@ -34,6 +33,8 @@ const sentryLoggerToken = OpaqueToken<Logger>('sentry.logger');
 /// If no dsn provided, it will log the exception without reporting it to sentry
 const sentryDsnToken = OpaqueToken<String>('sentry.dsn');
 
+const _breadcrumbsLimit = 30;
+
 class AngularSentry implements ExceptionHandler {
   final Logger log;
   final String environment;
@@ -45,9 +46,12 @@ class AngularSentry implements ExceptionHandler {
   final _exceptionController = StreamController<Event>.broadcast();
 
   Stream<Event> _onException;
-  SentryClientBrowser _sentry;
+  SentryClient _sentry;
 
   ApplicationRef _appRef;
+
+  StreamSubscription<Breadcrumb> _loggerListener;
+  List<Breadcrumb> _breadcrumbs = [];
 
   AngularSentry(
     Injector injector, {
@@ -74,6 +78,9 @@ class AngularSentry implements ExceptionHandler {
             onError: logError,
           );
 
+    _loggerListener =
+        Logger.root.onRecord.map(_recordToBreadcrumb).listen(_buildBreadcrumbs);
+
     _initSentry();
   }
 
@@ -81,13 +88,14 @@ class AngularSentry implements ExceptionHandler {
     if (dsn == null) return;
 
     try {
-      _sentry = SentryClientBrowser(
-          dsn: dsn,
-          httpClient: client ?? BrowserClient(),
-          environmentAttributes: Event(
-            environment: environment,
-            release: release,
-          ));
+      _sentry = SentryClient(
+        dsn: dsn,
+        httpClient: client,
+        environmentAttributes: Event(
+          environment: environment,
+          release: release,
+        ),
+      );
     } catch (e, s) {
       logError(e, s);
     }
@@ -160,5 +168,37 @@ class AngularSentry implements ExceptionHandler {
 
   void dispose() {
     _exceptionController.close();
+    _loggerListener.cancel();
+    _sentry.close();
+  }
+
+  void _buildBreadcrumbs(Breadcrumb breadcrumb) {
+    if (_breadcrumbs.length >= _breadcrumbsLimit) {
+      _breadcrumbs.removeAt(0);
+    }
+    _breadcrumbs.add(breadcrumb);
   }
 }
+
+SeverityLevel _logLevelToSeverityLevel(Level level) {
+  if (level == Level.WARNING) {
+    return SeverityLevel.warning;
+  }
+
+  if (level == Level.SEVERE) {
+    return SeverityLevel.error;
+  }
+
+  if (level == Level.SHOUT) {
+    return SeverityLevel.fatal;
+  }
+
+  return SeverityLevel.info;
+}
+
+Breadcrumb _recordToBreadcrumb(LogRecord record) => Breadcrumb(
+      record.message,
+      record.time,
+      level: _logLevelToSeverityLevel(record.level),
+      category: record.loggerName,
+    );

@@ -10,10 +10,18 @@ import 'main.template.dart' as ng;
 // ignore: uri_has_not_been_generated
 import 'app.template.dart' as app;
 
+Event _transformEvent(Event e) {
+  return e.copyWith(
+    userContext: new User(id: '1', ipAddress: '0.0.0.0'),
+    extra: {"location_url": window.location.href},
+  );
+}
+
 const sentryModule = Module(provide: [
-  //ValueProvider.forToken(sentryLoggerToken, "MY_SENTRY_DSN"),
+  ValueProvider.forToken(sentryLoggerToken, "MY_SENTRY_DSN"),
   ValueProvider.forToken(sentryEnvironmentToken, "production"),
   ValueProvider.forToken(sentryReleaseVersionToken, "1.0.0"),
+  ValueProvider.forToken(sentryTransformEventToken, _transformEvent),
   ClassProvider<ExceptionHandler>(
     ExceptionHandler,
     useClass: AngularSentry,
@@ -40,10 +48,7 @@ class AppSentry extends AngularSentry {
 
   @override
   Event transformEvent(Event e) {
-    return super.transformEvent(e).replace(
-      userContext: new User(id: '1', ipAddress: '0.0.0.0'),
-      extra: {"location_url": window.location.href},
-    );
+    return _transformEvent(super.transformEvent(e));
   }
 
   @override
