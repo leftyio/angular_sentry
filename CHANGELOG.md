@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0
+## 0.0.5
 
 - Update angular 5
 - Update sentry package
