@@ -9,8 +9,7 @@ environment:
 
 dependencies:
   angular: ^5.0.0
-  sentry: 
-    git: https://github.com/flutter/sentry.git
+  sentry: ^3.0.0-dev0
   logging: ^0.11.0
   http: ^0.12.0
   meta: ^1.1.0
