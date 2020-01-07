@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.6
+
+- Fix Breadcrumb message
+- Upgrade sentry package to 3.0.0+1
+
 ## 0.0.5
 
 - Update angular 5

@@ -115,7 +115,7 @@ SeverityLevel _logLevelToSeverityLevel(Level level) {
 }
 
 Breadcrumb _recordToBreadcrumb(LogRecord record) => Breadcrumb(
-      record.message,
+      record.message ?? record.error?.toString(),
       record.time,
       level: _logLevelToSeverityLevel(record.level),
       category: record.loggerName,
