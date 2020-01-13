@@ -1,7 +1,6 @@
 library angular_sentry;
 
 import 'dart:async';
-import "dart:html" as html;
 
 import 'package:meta/meta.dart';
 import 'package:angular/angular.dart';
@@ -12,18 +11,23 @@ export 'package:sentry/browser_client.dart';
 
 typedef Event TransformEvent(Event e);
 
-const _breadcrumbsLimit = 30;
+const breadcrumbsLimit = OpaqueToken('sentry.breadcrumbsLimit');
 
 class AngularSentry implements ExceptionHandler {
   final log = Logger('AngularSentry');
   final SentryClient sentryClient;
+  final int _breadcrumbsLimit;
 
   StreamSubscription<Breadcrumb> _loggerListener;
   List<Breadcrumb> _breadcrumbs = [];
 
-  AngularSentry(this.sentryClient) {
-    _loggerListener =
-        Logger.root.onRecord.map(_recordToBreadcrumb).listen(_buildBreadcrumbs);
+  AngularSentry(
+    this.sentryClient, {
+    @Inject(breadcrumbsLimit) @Optional() int breadcrumbsLimit,
+  }) : this._breadcrumbsLimit = breadcrumbsLimit ?? 30 {
+    _loggerListener = Logger.root.onRecord
+        .map(logRecordToBreadcrumb)
+        .listen(_buildBreadcrumbs);
   }
 
   /// can be override to transform sentry report
@@ -44,22 +48,8 @@ class AngularSentry implements ExceptionHandler {
   Event transformEvent(Event e) => e;
 
   /// Log the catched error using Logging
-  /// if no logger provided, print into console with window.console.error
   void logError(exception, [stackTrace, String reason]) {
-    if (log != null) {
-      log.severe(reason, exception, stackTrace);
-    } else {
-      logErrorWindow(exception, stackTrace, reason);
-    }
-  }
-
-  /// log error using window.console.error
-  void logErrorWindow(exception, [stackTrace, String reason]) {
-    if (reason != null) html.window.console.error(reason.toString());
-
-    html.window.console.error(exception.toString());
-
-    if (stackTrace != null) html.window.console.error(stackTrace.toString());
+    log.severe(reason, exception, stackTrace);
   }
 
   @protected
@@ -96,27 +86,32 @@ class AngularSentry implements ExceptionHandler {
     }
     _breadcrumbs.add(event);
   }
+
+  SeverityLevel logLevelToSeverityLevel(Level level) {
+    if (level == Level.WARNING) {
+      return SeverityLevel.warning;
+    }
+
+    if (level == Level.SEVERE) {
+      return SeverityLevel.error;
+    }
+
+    if (level == Level.SHOUT) {
+      return SeverityLevel.fatal;
+    }
+
+    return SeverityLevel.info;
+  }
+
+  Breadcrumb logRecordToBreadcrumb(LogRecord record) => Breadcrumb(
+        _normalizeMessage(record.message, record.error),
+        record.time,
+        level: logLevelToSeverityLevel(record.level),
+        category: record.loggerName,
+      );
 }
 
-SeverityLevel _logLevelToSeverityLevel(Level level) {
-  if (level == Level.WARNING) {
-    return SeverityLevel.warning;
-  }
-
-  if (level == Level.SEVERE) {
-    return SeverityLevel.error;
-  }
-
-  if (level == Level.SHOUT) {
-    return SeverityLevel.fatal;
-  }
-
-  return SeverityLevel.info;
-}
-
-Breadcrumb _recordToBreadcrumb(LogRecord record) => Breadcrumb(
-      record.message ?? record.error?.toString(),
-      record.time,
-      level: _logLevelToSeverityLevel(record.level),
-      category: record.loggerName,
-    );
+String _normalizeMessage(String reason, exception) =>
+    reason == null || reason == 'null' || reason.isEmpty
+        ? '$exception'
+        : reason;

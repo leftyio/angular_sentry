@@ -1,6 +1,6 @@
 name: angular_sentry
 description: Helper to implements sentry with Angular
-version: 0.0.6
+version: 0.0.7
 homepage: https://lefty.io
 author: Hadrien Lejard <hadrien.lejard@gmail.com>
 

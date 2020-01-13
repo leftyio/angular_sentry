@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.7
+
+- Fix logger
+- remove logErrorWindow
+- Breadcrumbs size limit can be set by injecting value with token `breadcrumbsLimit`
+
 ## 0.0.6
 
 - Fix Breadcrumb message
