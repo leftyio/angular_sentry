@@ -1,7 +1,7 @@
 targets:
   angular_sentry:
     sources:
-      include: ["example/**", "lib/**"]
+      include: ["example/**", "lib/**", '$package$']
     builders:
       build_web_compilers|dart_source_cleanup:
         release_options:

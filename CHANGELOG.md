@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.8
+
+- support Angular 6
+
 ## 0.0.7
 
 - Fix logger
