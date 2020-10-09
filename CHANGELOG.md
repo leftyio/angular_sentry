@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.0.8-alpha+1
+## 0.0.8
 
 - support Angular 6
 
