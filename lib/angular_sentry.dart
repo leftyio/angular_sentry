@@ -7,27 +7,26 @@ import 'package:angular/angular.dart';
 import 'package:logging/logging.dart';
 import "package:sentry/sentry.dart";
 
-export 'package:sentry/browser_client.dart';
+export 'package:sentry/sentry.dart';
 
-typedef Event TransformEvent(Event e);
+typedef SentryEvent TransformEvent(SentryEvent e);
 
-const breadcrumbsLimit = OpaqueToken('sentry.breadcrumbsLimit');
-
+/// Report any error happening inside Angular scope
+///
+/// Listen to [Logger.root] record to build [Breadcrumbs]
+/// can be disable via [AngularSentry] constructor
 class AngularSentry implements ExceptionHandler {
   final log = Logger('AngularSentry');
-  final SentryClient sentryClient;
-  final int _breadcrumbsLimit;
+  final bool disableBreadcrumbs;
 
   StreamSubscription<Breadcrumb> _loggerListener;
-  List<Breadcrumb> _breadcrumbs = [];
 
-  AngularSentry(
-    this.sentryClient, {
-    @Inject(breadcrumbsLimit) @Optional() int breadcrumbsLimit,
-  }) : this._breadcrumbsLimit = breadcrumbsLimit ?? 30 {
-    _loggerListener = Logger.root.onRecord
-        .map(logRecordToBreadcrumb)
-        .listen(_buildBreadcrumbs);
+  AngularSentry({this.disableBreadcrumbs = false}) {
+    if (disableBreadcrumbs == false) {
+      _loggerListener = Logger.root.onRecord
+          .map(_logRecordToBreadcrumb)
+          .listen(_buildBreadcrumbs);
+    }
   }
 
   /// can be override to transform sentry report
@@ -36,7 +35,7 @@ class AngularSentry implements ExceptionHandler {
   /// Example
   ///     ```dart
   ///     @override
-  ///     Event transformEvent(Event e) {
+  ///     Event transformEvent(SentryEvent e) {
   ///       return super.transformEvent(e).copyWith(
   ///         userContext: User(id: '1', ipAddress: '0.0.0.0'),
   ///         extra: {"location_url": window.location.href},
@@ -45,7 +44,7 @@ class AngularSentry implements ExceptionHandler {
   ///     ```
   @protected
   @mustCallSuper
-  Event transformEvent(Event e) => e;
+  SentryEvent transformEvent(SentryEvent e) => e;
 
   /// Log the catched error using Logging
   void logError(exception, [stackTrace, String reason]) {
@@ -56,17 +55,15 @@ class AngularSentry implements ExceptionHandler {
   @mustCallSuper
   void capture(dynamic exception, [dynamic stackTrace, String reason]) {
     final event = transformEvent(
-      Event(
-        exception: exception,
-        stackTrace: stackTrace,
-        message: reason,
-        breadcrumbs: _breadcrumbs,
+      SentryEvent(
+        throwable: exception,
+        timestamp: DateTime.now().toUtc(),
       ),
     );
 
     if (event == null) return;
 
-    sentryClient.capture(event: event).catchError(logError);
+    Sentry.captureEvent(event, stackTrace: stackTrace, hint: reason);
   }
 
   @override
@@ -77,39 +74,36 @@ class AngularSentry implements ExceptionHandler {
   }
 
   void dispose() {
-    _loggerListener.cancel();
+    _loggerListener?.cancel();
   }
 
-  void _buildBreadcrumbs(Breadcrumb event) {
-    if (_breadcrumbs.length >= _breadcrumbsLimit) {
-      _breadcrumbs.removeAt(0);
-    }
-    _breadcrumbs.add(event);
+  void _buildBreadcrumbs(Breadcrumb crumb) {
+    Sentry.addBreadcrumb(crumb);
   }
-
-  SeverityLevel logLevelToSeverityLevel(Level level) {
-    if (level == Level.WARNING) {
-      return SeverityLevel.warning;
-    }
-
-    if (level == Level.SEVERE) {
-      return SeverityLevel.error;
-    }
-
-    if (level == Level.SHOUT) {
-      return SeverityLevel.fatal;
-    }
-
-    return SeverityLevel.info;
-  }
-
-  Breadcrumb logRecordToBreadcrumb(LogRecord record) => Breadcrumb(
-        _normalizeMessage(record.message, record.error),
-        record.time,
-        level: logLevelToSeverityLevel(record.level),
-        category: record.loggerName,
-      );
 }
+
+SentryLevel _logLevelToSeverityLevel(Level level) {
+  if (level == Level.WARNING) {
+    return SentryLevel.warning;
+  }
+
+  if (level == Level.SEVERE) {
+    return SentryLevel.error;
+  }
+
+  if (level == Level.SHOUT) {
+    return SentryLevel.fatal;
+  }
+
+  return SentryLevel.info;
+}
+
+Breadcrumb _logRecordToBreadcrumb(LogRecord record) => Breadcrumb(
+      message: _normalizeMessage(record.message, record.error),
+      timestamp: record.time,
+      level: _logLevelToSeverityLevel(record.level),
+      category: record.loggerName,
+    );
 
 String _normalizeMessage(String reason, exception) =>
     reason == null || reason == 'null' || reason.isEmpty

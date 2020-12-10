@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.9
+
+- support sentry 4.0.0, see README or example for new usage
+
 ## 0.0.8
 
 - support Angular 6
@@ -19,11 +23,11 @@
 
 - Update angular 5
 - Update sentry package
-- ***Warning*** refactoring ***Breaking Change***:
-    + use OpaqueToken to pass release version, environment, dsn and logger
-        sentryEnvironmentToken,sentryReleaseVersionToken, sentryLoggerToken, sentryDsnToken
-    + no more tags and extra field, override `transformEvent` function instead
-    + rename `onCatch` to `capture`
+- **_Warning_** refactoring **_Breaking Change_**:
+  - use OpaqueToken to pass release version, environment, dsn and logger
+    sentryEnvironmentToken,sentryReleaseVersionToken, sentryLoggerToken, sentryDsnToken
+  - no more tags and extra field, override `transformEvent` function instead
+  - rename `onCatch` to `capture`
 
 ## 0.0.4
 
