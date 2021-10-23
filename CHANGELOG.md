@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0
+
+- Null safety
+- Support Angular 7
+- Support Sentry 6.0.0
+
 ## 0.0.9
 
 - support sentry 4.0.0, see README or example for new usage

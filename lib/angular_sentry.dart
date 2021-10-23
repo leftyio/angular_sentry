@@ -9,7 +9,7 @@ import "package:sentry/sentry.dart";
 
 export 'package:sentry/sentry.dart';
 
-typedef SentryEvent TransformEvent(SentryEvent e);
+typedef TransformEvent = SentryEvent Function(SentryEvent e);
 
 /// Report any error happening inside Angular scope
 ///
@@ -19,7 +19,7 @@ class AngularSentry implements ExceptionHandler {
   final log = Logger('AngularSentry');
   final bool disableBreadcrumbs;
 
-  StreamSubscription<Breadcrumb> _loggerListener;
+  StreamSubscription<Breadcrumb>? _loggerListener;
 
   AngularSentry({this.disableBreadcrumbs = false}) {
     if (disableBreadcrumbs == false) {
@@ -47,13 +47,13 @@ class AngularSentry implements ExceptionHandler {
   SentryEvent transformEvent(SentryEvent e) => e;
 
   /// Log the catched error using Logging
-  void logError(exception, [stackTrace, String reason]) {
+  void logError(exception, [stackTrace, String? reason]) {
     log.severe(reason, exception, stackTrace);
   }
 
   @protected
   @mustCallSuper
-  void capture(dynamic exception, [dynamic stackTrace, String reason]) {
+  void capture(dynamic exception, [dynamic stackTrace, String? reason]) {
     final event = transformEvent(
       SentryEvent(
         throwable: exception,
@@ -61,14 +61,12 @@ class AngularSentry implements ExceptionHandler {
       ),
     );
 
-    if (event == null) return;
-
     Sentry.captureEvent(event, stackTrace: stackTrace, hint: reason);
   }
 
   @override
   @protected
-  void call(dynamic exception, [dynamic stackTrace, String reason]) {
+  void call(dynamic exception, [dynamic stackTrace, String? reason]) {
     logError(exception, stackTrace, reason);
     capture(exception, stackTrace, reason);
   }
@@ -98,6 +96,7 @@ SentryLevel _logLevelToSeverityLevel(Level level) {
   return SentryLevel.info;
 }
 
+
 Breadcrumb _logRecordToBreadcrumb(LogRecord record) => Breadcrumb(
       message: _normalizeMessage(record.message, record.error),
       timestamp: record.time,
@@ -106,6 +105,6 @@ Breadcrumb _logRecordToBreadcrumb(LogRecord record) => Breadcrumb(
     );
 
 String _normalizeMessage(String reason, exception) =>
-    reason == null || reason == 'null' || reason.isEmpty
+    reason == 'null' || reason.isEmpty
         ? '$exception'
         : reason;

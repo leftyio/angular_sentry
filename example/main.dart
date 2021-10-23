@@ -37,7 +37,7 @@ class AppSentry extends AngularSentry {
   @override
   SentryEvent transformEvent(SentryEvent e) {
     return super.transformEvent(e).copyWith(
-      user: new User(id: '1', ipAddress: '0.0.0.0'),
+      user: SentryUser(id: '1', ipAddress: '0.0.0.0'),
       extra: {"location_url": window.location.href},
     );
   }
