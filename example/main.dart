@@ -16,7 +16,7 @@ const sentryModule = Module(provide: [
 ]);
 
 @GenerateInjector([sentryModule])
-const scannerApp = ng.scannerApp$Injector;
+final scannerApp = ng.scannerApp$Injector;
 
 Future<void> main() async {
   await Sentry.init(
