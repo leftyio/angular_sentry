@@ -96,7 +96,6 @@ SentryLevel _logLevelToSeverityLevel(Level level) {
   return SentryLevel.info;
 }
 
-
 Breadcrumb _logRecordToBreadcrumb(LogRecord record) => Breadcrumb(
       message: _normalizeMessage(record.message, record.error),
       timestamp: record.time,
@@ -105,6 +104,4 @@ Breadcrumb _logRecordToBreadcrumb(LogRecord record) => Breadcrumb(
     );
 
 String _normalizeMessage(String reason, exception) =>
-    reason == 'null' || reason.isEmpty
-        ? '$exception'
-        : reason;
+    reason == 'null' || reason.isEmpty ? '$exception' : reason;
