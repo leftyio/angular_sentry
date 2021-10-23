@@ -1,3 +1,5 @@
+[![Dart](https://github.com/leftyio/angular_sentry/actions/workflows/dart.yml/badge.svg)](https://github.com/leftyio/angular_sentry/actions/workflows/dart.yml)
+
 # angular_sentry
 
 Helper to implements [sentry.io](https://sentry.io) with Angular.
@@ -49,7 +51,7 @@ class AppSentry extends AngularSentry {
   @override
   Event transformEvent(SentryEvent e) {
     return super.transformEvent(e).copyWith(
-      user: new User(id: '1', ipAddress: '0.0.0.0'),
+      user: SentryUser(id: '1', ipAddress: '0.0.0.0'),
       extra: {"location_url": window.location.href},
     );
   }
